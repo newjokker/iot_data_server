@@ -1,0 +1,15 @@
+
+[Unit]
+Description=TXKJ Python Server
+After=network.target
+
+[Service]
+User=txkj
+WorkingDirectory=/home/txkj/Code/dcu_escalator
+ExecStart=/home/txkj/Code/dcu_escalator/start_server.sh
+RestartSec=5s             # 必须加单位 "s"（秒）
+
+[Install]
+WantedBy=multi-user.target
+
+

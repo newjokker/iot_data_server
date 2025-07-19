@@ -4,4 +4,7 @@
 
 *.py[cd]
 
+/.vscode/
+
+
 
