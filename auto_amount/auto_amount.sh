@@ -29,7 +29,7 @@ echo "Checking the status of iot_data_server.service..."
 sudo systemctl status iot_data_server.service
 
 # 查看实时日志
-# journalctl -u escalator_algo_server.service -f 
+# journalctl -u iot_data_server.service -f 
 
 # 关闭服务
 # sudo systemctl disable escalator_algo_server; sudo systemctl stop escalator_algo_server
