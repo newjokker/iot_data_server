@@ -1,0 +1,15 @@
+
+[Unit]
+Description=IOT Data Python Server
+After=network.target
+
+[Service]
+User=root
+WorkingDirectory=/root/Code/iot_server
+ExecStart=/root/Code/iot_server/start_server.sh
+RestartSec=5s             # 必须加单位 "s"（秒）
+
+[Install]
+WantedBy=multi-user.target
+
+
