@@ -32,10 +32,10 @@ sudo systemctl status iot_data_server.service
 # journalctl -u iot_data_server.service -f 
 
 # 关闭服务
-# sudo systemctl disable escalator_algo_server; sudo systemctl stop escalator_algo_server
+# sudo systemctl disable iot_data_server; sudo systemctl stop iot_data_server
 
 # 开启服务
-# sudo systemctl start escalator_algo_server; sudo systemctl enable escalator_algo_server
+# sudo systemctl start iot_data_server; sudo systemctl enable iot_data_server
 
 
 

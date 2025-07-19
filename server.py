@@ -8,7 +8,7 @@ from fastapi.templating import Jinja2Templates
 from datetime import datetime
 from typing import Optional
 import os
-from dao.iot_data import SensorDataDAO, SensorDataModel, SensorData
+from dao.iot_data import SensorDataDAO, SensorDataModel
 
 # FastAPI 应用
 app = FastAPI()
