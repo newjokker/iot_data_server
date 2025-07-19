@@ -1,21 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from datetime import datetime
-from typing import Dict, Optional, List
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, JSON, Index
-from sqlalchemy.orm import sessionmaker, declarative_base
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.pool import QueuePool
-from contextlib import contextmanager
-import pytz
-from pydantic import BaseModel
+from typing import Optional
 import os
 from dao.iot_data import SensorDataDAO, SensorDataModel, SensorData
-from config import IOT_DATA_DB
 
 # FastAPI 应用
 app = FastAPI()
@@ -72,7 +65,7 @@ async def get_data(
         print(f"查询数据时出错: {e}")
         raise HTTPException(status_code=500, detail="Failed to query data")
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/menu", response_class=HTMLResponse)
 async def view_data(
     request: Request,
     device_id: Optional[str] = None,
@@ -119,5 +112,6 @@ async def view_data(
 
 
 if __name__ == "__main__":
+    
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=12345)
