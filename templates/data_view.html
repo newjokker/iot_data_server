@@ -63,24 +63,8 @@
         }
         .chart-container {
             position: relative;
-            height: 400px;
+            height: 500px;
             margin-bottom: 30px;
-        }
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        .data-table th, .data-table td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        .data-table th {
-            background-color: #f2f2f2;
-        }
-        .data-table tr:nth-child(even) {
-            background-color: #f9f9f9;
         }
     </style>
 </head>
@@ -115,33 +99,13 @@
         </div>
         
         <div class="chart-container">
-            <canvas id="temperature-chart"></canvas>
+            <canvas id="combined-chart"></canvas>
         </div>
-        
-        <div class="chart-container">
-            <canvas id="humidity-chart"></canvas>
-        </div>
-        
-        <h2>原始数据</h2>
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>时间戳</th>
-                    <th>设备ID</th>
-                    <th>温度 (°C)</th>
-                    <th>湿度 (%)</th>
-                </tr>
-            </thead>
-            <tbody id="data-table-body">
-                <!-- 数据将通过JavaScript动态填充 -->
-            </tbody>
-        </table>
     </div>
 
     <script>
         // 全局变量存储图表实例
-        let temperatureChart = null;
-        let humidityChart = null;
+        let combinedChart = null;
         
         // 页面加载完成后执行
         document.addEventListener('DOMContentLoaded', function() {
@@ -217,9 +181,8 @@
                 });
                 
                 const data = response.data.data;
-                if (data && data.data_json) {
-                    updateCharts(data);
-                    updateDataTable(data);
+                if (data) {
+                    updateChart(data);
                 } else {
                     alert('没有找到数据');
                 }
@@ -229,82 +192,109 @@
             }
         }
         
-        // 更新图表
-        function updateCharts(data) {
-            const timestamps = data.timestamp.map(t => new Date(t).toLocaleString());
-            const temperatures = data.data_json.temperature;
-            const humidities = data.data_json.humidity;
+        // 更新图表 - 合并温湿度到一个图表
+        function updateChart(data) {
+            // 修改这里：提取时间戳并格式化为"月-日 时:分"
+            const timestamps = data.map(item => {
+                const date = new Date(item.timestamp);
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                return `${month}-${day} ${hours}:${minutes}`;
+            });
             
-            // 温度图表
-            const tempCtx = document.getElementById('temperature-chart').getContext('2d');
-            if (temperatureChart) {
-                temperatureChart.destroy();
+            const temperatures = data.map(item => item.data.temperature);
+            const humidities = data.map(item => item.data.humidity);
+            
+            // 获取图表canvas上下文
+            const ctx = document.getElementById('combined-chart').getContext('2d');
+            
+            // 如果已有图表实例，先销毁
+            if (combinedChart) {
+                combinedChart.destroy();
             }
-            temperatureChart = new Chart(tempCtx, {
+            
+            // 创建新图表
+            combinedChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: timestamps,
-                    datasets: [{
-                        label: '温度 (°C)',
-                        data: temperatures,
-                        borderColor: 'rgb(255, 99, 132)',
-                        backgroundColor: 'rgba(255, 99, 132, 0.1)',
-                        borderWidth: 2,
-                        tension: 0.1,
-                        fill: true
-                    }]
+                    datasets: [
+                        {
+                            label: '温度 (°C)',
+                            data: temperatures,
+                            borderColor: 'rgb(255, 99, 132)',
+                            backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.1,
+                            fill: false,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: '湿度 (%)',
+                            data: humidities,
+                            borderColor: 'rgb(54, 162, 235)',
+                            backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.1,
+                            fill: false,
+                            yAxisID: 'y1'
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += context.parsed.y.toFixed(2);
+                                        label += context.datasetIndex === 0 ? '°C' : '%';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
                     scales: {
                         y: {
-                            beginAtZero: false,
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
                             title: {
                                 display: true,
                                 text: '温度 (°C)'
+                            },
+                            grid: {
+                                drawOnChartArea: true
                             }
                         },
-                        x: {
-                            title: {
-                                display: true,
-                                text: '时间'
-                            }
-                        }
-                    }
-                }
-            });
-            
-            // 湿度图表
-            const humidityCtx = document.getElementById('humidity-chart').getContext('2d');
-            if (humidityChart) {
-                humidityChart.destroy();
-            }
-            humidityChart = new Chart(humidityCtx, {
-                type: 'line',
-                data: {
-                    labels: timestamps,
-                    datasets: [{
-                        label: '湿度 (%)',
-                        data: humidities,
-                        borderColor: 'rgb(54, 162, 235)',
-                        backgroundColor: 'rgba(54, 162, 235, 0.1)',
-                        borderWidth: 2,
-                        tension: 0.1,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: false,
-                            min: 0,
-                            max: 100,
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
                             title: {
                                 display: true,
                                 text: '湿度 (%)'
+                            },
+                            min: 0,
+                            max: 100,
+                            grid: {
+                                drawOnChartArea: false
+                            },
+                            afterFit: function(axis) {
+                                axis.paddingRight = 10;
                             }
                         },
                         x: {
@@ -318,33 +308,7 @@
             });
         }
         
-        // 更新数据表格
-        function updateDataTable(data) {
-            const tableBody = document.getElementById('data-table-body');
-            tableBody.innerHTML = '';
-            
-            for (let i = 0; i < data.timestamp.length; i++) {
-                const row = document.createElement('tr');
-                
-                const timestampCell = document.createElement('td');
-                timestampCell.textContent = new Date(data.timestamp[i]).toLocaleString();
-                row.appendChild(timestampCell);
-                
-                const deviceCell = document.createElement('td');
-                deviceCell.textContent = data.device_id;
-                row.appendChild(deviceCell);
-                
-                const tempCell = document.createElement('td');
-                tempCell.textContent = data.data_json.temperature[i].toFixed(2);
-                row.appendChild(tempCell);
-                
-                const humidityCell = document.createElement('td');
-                humidityCell.textContent = data.data_json.humidity[i].toFixed(2);
-                row.appendChild(humidityCell);
-                
-                tableBody.appendChild(row);
-            }
-        }
+    
     </script>
 </body>
 </html>
