@@ -22,7 +22,7 @@ sudo systemctl start iot_data_server.service
 
 # Wait for 20 seconds
 echo "Wait for start..."
-sleep 10
+sleep 5
 
 # Check the status of the service
 echo "Checking the status of iot_data_server.service..."
