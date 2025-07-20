@@ -194,6 +194,9 @@
         
         // 更新图表 - 合并温湿度到一个图表
         function updateChart(data) {
+
+            data.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
             // 修改这里：提取时间戳并格式化为"月-日 时:分"
             const timestamps = data.map(item => {
                 const date = new Date(item.timestamp);
