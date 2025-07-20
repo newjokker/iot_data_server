@@ -87,7 +87,7 @@ async def get_device_info(request: Request):
         )
         if not data:
             raise HTTPException(status_code=404, detail="Device not found")
-        return JSONResponse(content={"status": "success", "data": data[0]}, status_code=200)
+        return JSONResponse(content={"status": "success", "data": data}, status_code=200)
     except Exception as e:
         print(f"获取设备信息时出错: {e}")
         raise HTTPException(status_code=500, detail="Failed to get device info")
