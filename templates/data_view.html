@@ -6,6 +6,7 @@
     <title>IoT 数据可视化</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="shortcut icon" href="/static/images/iot.ico" type="image/x-icon">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -134,6 +135,13 @@
                     option.textContent = device;
                     selectElement.appendChild(option);
                 });
+                
+                // 如果有设备，自动选择第一个
+                if (devices.length > 0) {
+                    selectElement.value = devices[0];
+                    // 可选：自动触发数据查询
+                    fetchData();
+                }
             } catch (error) {
                 console.error('获取设备列表失败:', error);
                 alert('获取设备列表失败，请检查控制台日志');
@@ -143,7 +151,7 @@
         // 设置默认时间范围
         function setDefaultTimeRange() {
             const now = new Date();
-            const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+            const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
             
             document.getElementById('end-time').value = formatDateTimeLocal(now);
             document.getElementById('start-time').value = formatDateTimeLocal(oneHourAgo);
