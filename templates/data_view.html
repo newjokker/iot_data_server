@@ -93,7 +93,7 @@
             
             <div class="control-group">
                 <label for="limit">数据点数:</label>
-                <input type="number" id="limit" value="100" min="1">
+                <input type="number" id="limit" value="1000" min="1">
             </div>
             
             <button id="query-btn">查询数据</button>
@@ -154,7 +154,7 @@
             const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
             
             document.getElementById('end-time').value = formatDateTimeLocal(now);
-            document.getElementById('start-time').value = formatDateTimeLocal(oneHourAgo);
+            document.getElementById('start-time').value = formatDateTimeLocal(oneDayAgo);
         }
         
         // 格式化日期为datetime-local输入所需的格式
