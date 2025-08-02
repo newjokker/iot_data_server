@@ -29,7 +29,7 @@ def delete_device(device_id, url="http://8.153.160.138:12345/delete_device_id"):
 # 使用示例
 if __name__ == "__main__":
     # 替换为你要删除的设备ID
-    device_id_to_delete = "ESP32-DHT11"
+    device_id_to_delete = "ESP32S3-DHT11"
     
     # 替换为你的API基础URL
     api_base_url = "http://8.153.160.138:12345/delete_device_id"  # 例如 "http://localhost:8000"
