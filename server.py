@@ -92,13 +92,13 @@ async def get_device_info(request: Request):
         print(f"获取设备信息时出错: {e}")
         raise HTTPException(status_code=500, detail="Failed to get device info")
 
-@app.get("/menu", response_class=HTMLResponse)
+@app.get("/menu")
 async def view_data():
     """数据查看页面"""
     html_path = os.path.join("templates", "data_view.html")
     return FileResponse(html_path)
 
-@app.get("/delete_device_id", response_class=HTMLResponse)
+@app.post("/delete_device_id")
 async def delete_device_id(request: Request):
     try:
         raw_data = await request.json()
