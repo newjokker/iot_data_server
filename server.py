@@ -98,7 +98,30 @@ async def view_data():
     html_path = os.path.join("templates", "data_view.html")
     return FileResponse(html_path)
 
-
+@app.get("/delete_device_id", response_class=HTMLResponse)
+async def delete_device_id(request: Request):
+    try:
+        raw_data = await request.json()
+        
+        # 验证必须包含device_id字段
+        if "device_id" not in raw_data:
+            raise HTTPException(status_code=400, detail="device_id is required")
+        
+        # 构建数据对象
+        device_id = raw_data.pop("device_id")
+        
+        if dao.delete_device_data(device_id):
+            return JSONResponse(content={"status": "success"}, status_code=200)
+        else:
+            raise HTTPException(status_code=500, detail="Failed to delete device data")
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"处理数据时出错: {e}")
+        raise HTTPException(status_code=400, detail="Invalid data")
+    
+    
 if __name__ == "__main__":
     
     import uvicorn

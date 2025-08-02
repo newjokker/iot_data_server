@@ -122,3 +122,24 @@ class SensorDataDAO:
         with self.get_db() as db:
             devices = db.query(SensorData.device_id).distinct().all()
             return [device[0] for device in devices]
+    
+    def delete_device_data(self, device_id: str) -> bool:
+        """删除指定设备的所有数据
+        
+        Args:
+            device_id: 要删除数据的设备ID
+            
+        Returns:
+            bool: 删除操作是否成功
+        """
+        try:
+            with self.get_db() as db:
+                # 删除指定设备的所有记录
+                deleted_count = db.query(SensorData)\
+                                 .filter(SensorData.device_id == device_id)\
+                                 .delete()
+                print(f"已删除 {deleted_count} 条设备 {device_id} 的数据")
+                return True
+        except SQLAlchemyError as e:
+            print(f"删除设备数据失败: {str(e)}")
+            return False
