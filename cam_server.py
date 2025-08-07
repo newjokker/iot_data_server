@@ -1,5 +1,5 @@
 import asyncio
-from fastapi import FastAPI, Request, UploadFile
+from fastapi import FastAPI, Request, UploadFile, HTTPException
 from fastapi.responses import StreamingResponse, JSONResponse
 from typing import Set
 import logging
@@ -31,23 +31,14 @@ async def generate_frames(request: Request):
         active_clients.discard(queue)
 
 @app.post("/upload_frame")
-async def upload_frame(file: UploadFile = None):
-    """接收 ESP32-CAM 推送的视频帧"""
+async def upload_frame(request: Request):
+    """接收 ESP32-CAM 推送的视频帧（原始二进制数据）"""
     try:
-        if not file:
-            return JSONResponse(
-                status_code=400,
-                content={"status": "error", "message": "No file provided"}
-            )
-        
-        # 读取帧数据
-        frame_data = await file.read()
+        # 直接读取请求体中的二进制数据
+        frame_data = await request.body()
         
         if not frame_data:
-            return JSONResponse(
-                status_code=400,
-                content={"status": "error", "message": "Empty frame data"}
-            )
+            raise HTTPException(status_code=400, detail="Empty frame data")
         
         logger.info(f"Received frame with size: {len(frame_data)} bytes")
         
@@ -65,10 +56,7 @@ async def upload_frame(file: UploadFile = None):
     
     except Exception as e:
         logger.error(f"Error processing frame: {str(e)}")
-        return JSONResponse(
-            status_code=500,
-            content={"status": "error", "message": str(e)}
-        )
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/stream")
 async def video_feed(request: Request):
