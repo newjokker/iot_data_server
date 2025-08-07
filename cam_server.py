@@ -1,6 +1,6 @@
 import asyncio
 from fastapi import FastAPI, Request, UploadFile
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 from typing import Set
 import logging
 
@@ -31,19 +31,44 @@ async def generate_frames(request: Request):
         active_clients.discard(queue)
 
 @app.post("/upload_frame")
-async def upload_frame(file: UploadFile):
+async def upload_frame(file: UploadFile = None):
     """接收 ESP32-CAM 推送的视频帧"""
-    frame_data = await file.read()
+    try:
+        if not file:
+            return JSONResponse(
+                status_code=400,
+                content={"status": "error", "message": "No file provided"}
+            )
+        
+        # 读取帧数据
+        frame_data = await file.read()
+        
+        if not frame_data:
+            return JSONResponse(
+                status_code=400,
+                content={"status": "error", "message": "Empty frame data"}
+            )
+        
+        logger.info(f"Received frame with size: {len(frame_data)} bytes")
+        
+        # 分发给所有客户端
+        for queue in list(active_clients):
+            try:
+                queue.put_nowait(frame_data)
+            except asyncio.QueueFull:
+                logger.warning("Client queue full, skipping frame")
+            except Exception as e:
+                logger.error(f"Error sending to client: {e}")
+                active_clients.discard(queue)
+        
+        return {"status": "ok", "message": "Frame processed"}
     
-    # 分发给所有客户端
-    for queue in list(active_clients):
-        try:
-            await queue.put(frame_data)
-        except Exception as e:
-            logger.error(f"Error sending to client: {e}")
-            active_clients.discard(queue)
-    
-    return {"status": "ok"}
+    except Exception as e:
+        logger.error(f"Error processing frame: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={"status": "error", "message": str(e)}
+        )
 
 @app.get("/stream")
 async def video_feed(request: Request):
@@ -53,8 +78,11 @@ async def video_feed(request: Request):
         media_type="multipart/x-mixed-replace; boundary=frame"
     )
 
+@app.get("/health")
+async def health_check():
+    """健康检查端点"""
+    return {"status": "ok", "message": "Server is running"}
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=12346)
-    
-    
