@@ -128,7 +128,7 @@
         // 获取设备列表
         async function fetchDeviceList() {
             try {
-                const response = await axios.get('/get_iot_device_list');
+                const response = await axios.get('/data/get_iot_device_list');
                 const devices = response.data.devices;
                 
                 const selectElement = document.getElementById('device-select');
