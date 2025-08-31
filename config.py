@@ -5,6 +5,8 @@ WORK_DIR = "./data"
 
 
 IOT_DATA_DB = os.path.join(WORK_DIR, "iot_data.db") 
+
+AGENT_DB = os.path.join(WORK_DIR, "agent.db") 
  
 
 
