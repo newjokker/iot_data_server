@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from datetime import datetime
 from typing import List, Optional
 from pydantic import BaseModel
-from scripts.agent import AgentDAO, AgentCreate, AgentResponse, beijing_tz
+from dao.agent import AgentDAO, AgentCreate, AgentResponse, beijing_tz
 
 
 # 创建路由器
