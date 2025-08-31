@@ -5,8 +5,8 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import os
-from scripts.agent import agent_router
-from scripts.iot_data import data_router
+from scripts.agent_server import agent_router
+from scripts.iot_data_server import data_router
 
 # FastAPI 应用
 app = FastAPI()

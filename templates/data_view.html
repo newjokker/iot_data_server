@@ -211,7 +211,7 @@
         try {
             // 1. 获取设备的所有可用数据键
             const keysResponse = await axios.post('/data/get_device_id_key', {
-                device_id: deviceId
+                device_id: deviceIdda
             });
             
             const availableKeys = keysResponse.data.key_list || [];
