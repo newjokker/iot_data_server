@@ -185,7 +185,7 @@
             const endTime = document.getElementById('end-time').value;
             
             try {
-                const response = await axios.post('/query_iot_data', {
+                const response = await axios.post('/data/query_iot_data', {
                     device_id: deviceId,
                     start_time: startTime,
                     end_time: endTime,
