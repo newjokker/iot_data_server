@@ -61,11 +61,6 @@ async def get_device_info(request: Request):
         if not device_id:
             raise HTTPException(status_code=400, detail="device_id is required")
         
-        limit = json_info.get("limit", 100)
-        limit = int(limit)
-        if limit <= 0:
-            raise HTTPException(status_code=400, detail="limit must be a positive integer")
-
         # 转换时间格式
         start_time = json_info.get("start_time", None)
         end_time = json_info.get("end_time", None)
@@ -77,7 +72,7 @@ async def get_device_info(request: Request):
             device_id=device_id,
             start_time=start_dt,
             end_time=end_dt,
-            limit=limit
+            limit=None
         )
         if not data:
             raise HTTPException(status_code=404, detail="Device not found")

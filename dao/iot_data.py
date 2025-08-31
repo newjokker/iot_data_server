@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -58,6 +57,7 @@ Base.metadata.create_all(bind=engine)
 
 # DAO 类
 class SensorDataDAO:
+    
     @contextmanager
     def get_db(self):
         """提供数据库会话上下文"""
@@ -144,3 +144,27 @@ class SensorDataDAO:
         except SQLAlchemyError as e:
             print(f"删除设备数据失败: {str(e)}")
             return False
+        
+    def get_device_json_keys(self, device_id: str):
+        """获取指定设备的所有JSON键的种类（去重）
+        
+        Args:
+            device_id: 要查询的设备ID
+            
+        Returns:
+            List[str]: 去重后的JSON键列表
+        """
+        with self.get_db() as db:
+            # 查询该设备的所有记录
+            records = db.query(SensorData.data_json)\
+                      .filter(SensorData.device_id == device_id)\
+                      .all()
+            
+            # 收集所有JSON键
+            keys = set()
+            for record in records:
+                if isinstance(record.data_json, dict):
+                    keys.update(record.data_json.keys())
+            
+            return sorted(list(keys))
+

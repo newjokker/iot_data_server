@@ -203,12 +203,27 @@
             }
         }
         
-        // 更新图表 - 合并温湿度到一个图表
-        function updateChart(data) {
+    // 更新图表 - 动态显示所有可用数据
+    async function updateChart(data) {
+        const deviceId = document.getElementById('device-select').value;
+        if (!deviceId) return;
 
+        try {
+            // 1. 获取设备的所有可用数据键
+            const keysResponse = await axios.post('/get_device_id_key', {
+                device_id: deviceId
+            });
+            
+            const availableKeys = keysResponse.data.key_list || [];
+            if (availableKeys.length === 0) {
+                alert('该设备没有可用的数据键');
+                return;
+            }
+
+            // 2. 处理数据
             data.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
-            // 修改这里：提取时间戳并格式化为"月-日 时:分"
+            // 提取时间戳并格式化为"月-日 时:分"
             const timestamps = data.map(item => {
                 const date = new Date(item.timestamp);
                 const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -217,11 +232,49 @@
                 const minutes = String(date.getMinutes()).padStart(2, '0');
                 return `${month}-${day} ${hours}:${minutes}`;
             });
-            
-            const temperatures = data.map(item => item.data.temperature);
-            const humidities = data.map(item => item.data.humidity);
-            
-            // 获取图表canvas上下文
+
+            // 3. 为每个键准备数据集
+            const datasets = [];
+            const colors = [
+                'rgb(255, 99, 132)', 'rgb(54, 162, 235)', 'rgb(255, 159, 64)',
+                'rgb(75, 192, 192)', 'rgb(153, 102, 255)', 'rgb(255, 205, 86)',
+                'rgb(201, 203, 207)', 'rgb(255, 99, 71)', 'rgb(60, 179, 113)'
+            ];
+
+            // 为每个键创建数据集
+            availableKeys.forEach((key, index) => {
+                const colorIndex = index % colors.length;
+                const color = colors[colorIndex];
+                
+                // 提取该键对应的所有值
+                const values = data.map(item => {
+                    // 支持嵌套数据结构（如 item.data.temperature）
+                    if (item.data && item.data[key] !== undefined) {
+                        return item.data[key];
+                    }
+                    return item[key] !== undefined ? item[key] : null;
+                }).filter(val => val !== null);
+
+                if (values.length > 0) {
+                    datasets.push({
+                        label: `${key}`,
+                        data: values,
+                        borderColor: color,
+                        backgroundColor: color.replace('rgb', 'rgba').replace(')', ', 0.1)'),
+                        borderWidth: 2,
+                        tension: 0.1,
+                        fill: false,
+                        yAxisID: `y${index === 0 ? '' : index + 1}` // 第一个用y，其他的用y1, y2等
+                    });
+                }
+            });
+
+            if (datasets.length === 0) {
+                alert('没有有效数据可供显示');
+                return;
+            }
+
+            // 4. 创建/更新图表
             const ctx = document.getElementById('combined-chart').getContext('2d');
             
             // 如果已有图表实例，先销毁
@@ -234,28 +287,7 @@
                 type: 'line',
                 data: {
                     labels: timestamps,
-                    datasets: [
-                        {
-                            label: '温度 (°C)',
-                            data: temperatures,
-                            borderColor: 'rgb(255, 99, 132)',
-                            backgroundColor: 'rgba(255, 99, 132, 0.1)',
-                            borderWidth: 2,
-                            tension: 0.1,
-                            fill: false,
-                            yAxisID: 'y'
-                        },
-                        {
-                            label: '湿度 (%)',
-                            data: humidities,
-                            borderColor: 'rgb(54, 162, 235)',
-                            backgroundColor: 'rgba(54, 162, 235, 0.1)',
-                            borderWidth: 2,
-                            tension: 0.1,
-                            fill: false,
-                            yAxisID: 'y1'
-                        }
-                    ]
+                    datasets: datasets
                 },
                 options: {
                     responsive: true,
@@ -274,53 +306,63 @@
                                     }
                                     if (context.parsed.y !== null) {
                                         label += context.parsed.y.toFixed(2);
-                                        label += context.datasetIndex === 0 ? '°C' : '%';
                                     }
                                     return label;
                                 }
                             }
                         }
                     },
-                    scales: {
-                        y: {
-                            type: 'linear',
-                            display: true,
-                            position: 'left',
-                            title: {
-                                display: true,
-                                text: '温度 (°C)'
-                            },
-                            grid: {
-                                drawOnChartArea: true
-                            }
-                        },
-                        y1: {
-                            type: 'linear',
-                            display: true,
-                            position: 'right',
-                            title: {
-                                display: true,
-                                text: '湿度 (%)'
-                            },
-                            min: 0,
-                            max: 100,
-                            grid: {
-                                drawOnChartArea: false
-                            },
-                            afterFit: function(axis) {
-                                axis.paddingRight = 10;
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: '时间'
-                            }
-                        }
-                    }
+                    scales: createDynamicScales(availableKeys)
                 }
             });
+
+        } catch (error) {
+            console.error('更新图表失败:', error);
+            alert('更新图表失败，请检查控制台日志');
         }
+    }
+
+    // 动态创建刻度配置
+    function createDynamicScales(keys) {
+        const scales = {
+            x: {
+                title: {
+                    display: true,
+                    text: '时间'
+                }
+            }
+        };
+
+        // 为每个键创建一个y轴
+        keys.forEach((key, index) => {
+            const axisId = index === 0 ? 'y' : `y${index + 1}`;
+            const position = index === 0 ? 'left' : index % 2 === 1 ? 'right' : 'left';
+            
+            scales[axisId] = {
+                type: 'linear',
+                display: true,
+                position: position,
+                title: {
+                    display: true,
+                    text: key
+                },
+                grid: {
+                    drawOnChartArea: index === 0 // 只有第一个轴显示网格线
+                },
+                afterFit: function(axis) {
+                    if (position === 'right') {
+                        axis.paddingRight = 10;
+                    } else {
+                        axis.paddingLeft = 10;
+                    }
+                }
+            };
+        });
+
+        return scales;
+    }
+        
+    
     </script>
 </body>
 </html>
