@@ -110,3 +110,26 @@ async def delete_device_id(request: Request):
         print(f"处理数据时出错: {e}")
         raise HTTPException(status_code=400, detail="Invalid data")
 
+@data_router.post("/get_device_id_key")
+async def get_device_id_key(request: Request):
+    try:
+        raw_data = await request.json()
+        
+        # 验证必须包含device_id字段
+        if "device_id" not in raw_data:
+            raise HTTPException(status_code=400, detail="device_id is required")
+        
+        # 构建数据对象
+        device_id = raw_data.pop("device_id")
+        
+        key_list = dao.get_device_json_keys(device_id)
+    
+        return JSONResponse(content={"status": "success", "key_list": key_list}, status_code=200)
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"处理数据时出错: {e}")
+        raise HTTPException(status_code=400, detail="Invalid data")
+  
+
