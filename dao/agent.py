@@ -1,27 +1,22 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import JSONResponse, HTMLResponse
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
+from fastapi import HTTPException
 from datetime import datetime
-from typing import Dict, Optional, List
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, JSON, Index
+from typing import Dict, Optional
+from sqlalchemy import create_engine, Column, Integer, String, DateTime
 from sqlalchemy.orm import sessionmaker, declarative_base
-from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.pool import QueuePool
 from contextlib import contextmanager
 import pytz
 from pydantic import BaseModel
-import os
-from config import IOT_DATA_DB, AGENT_DB
+from config import AGENT_DB
 
-# 数据库配置
-DATABASE_URL = f"sqlite:///{AGENT_DB}"
+
+DATABASE_URL = f"sqlite:///{AGENT_DB}"  
 beijing_tz = pytz.timezone('Asia/Shanghai')
 
-# SQLAlchemy 基础配置
+# SQLAlchemy 配置
 Base = declarative_base()
 engine = create_engine(
     DATABASE_URL,
@@ -34,46 +29,42 @@ engine = create_engine(
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# Pydantic 模型
-class AgentCreate(BaseModel):
-    name: str
-    url: str
-    describe: Optional[str] = None
-
-class AgentResponse(BaseModel):
-    id: int
-    name: str
-    url: str
-    describe: Optional[str] = None
-    timestamp: datetime
-
-    class Config:
-        from_attributes = True
-
-# 数据库模型
 class Agent(Base):
     __tablename__ = 'agents'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    timestamp = Column(DateTime, default=lambda: datetime.now(beijing_tz), nullable=False)
-    name = Column(String(100), nullable=False)
-    url = Column(String(256), nullable=False)
+    create_time = Column(DateTime, default=lambda: datetime.now(beijing_tz), nullable=False)
+    name = Column(String(100), nullable=False, unique=True)
+    freq = Column(Integer, nullable=False)  # 上传频率，单位：1/freq 秒
     describe = Column(String(256), nullable=True)
 
-    # 创建索引
-    __table_args__ = (
-        Index('idx_name', 'name'),
-        Index('idx_timestamp', 'timestamp'),
-    )
-
-# 创建表
+# 创建数据表（如果尚未创建）
 Base.metadata.create_all(bind=engine)
 
-# DAO 类
+
+class AgentCreate(BaseModel):
+    name: str
+    freq: int
+    describe: Optional[str] = None
+
+class AgentUpdate(BaseModel):
+    freq: Optional[int] = None
+    describe: Optional[str] = None
+
+class AgentOut(BaseModel):
+    id: int
+    create_time: datetime
+    name: str
+    freq: int
+    describe: Optional[str]
+    
+    class Config:
+        orm_mode = True
+
+
 class AgentDAO:
     @contextmanager
     def get_db(self):
-        """提供数据库会话上下文"""
         db = SessionLocal()
         try:
             yield db
@@ -84,62 +75,51 @@ class AgentDAO:
         finally:
             db.close()
 
-    def create_agent(self, agent_data: AgentCreate) -> Agent:
-        """添加agent"""
+    def create_agent(self, name: str, freq: int, describe: Optional[str] = None) -> Agent:
         with self.get_db() as db:
-            # 检查是否已存在相同名称的agent
-            existing_agent = db.query(Agent).filter(Agent.name == agent_data.name).first()
-            if existing_agent:
-                raise HTTPException(status_code=400, detail="Agent with this name already exists")
-            
-            # 创建新agent
-            agent = Agent(
-                name=agent_data.name,
-                url=agent_data.url,
-                describe=agent_data.describe
-            )
+            # 检查是否已存在同名 agent
+            existing = db.query(Agent).filter(Agent.name == name).first()
+            if existing:
+                raise HTTPException(status_code=400, detail=f"Agent with name '{name}' already exists.")
+            agent = Agent(name=name, freq=freq, describe=describe)
             db.add(agent)
-            db.flush()  # 获取生成的ID
-            db.refresh(agent)
+            db.flush()  # 为了能拿到 agent.id（可选）
             return agent
 
-    def delete_agent(self, agent_id: int) -> bool:
-        """删除agent"""
+    def delete_agent(self, name: int) -> bool:
         with self.get_db() as db:
-            agent = db.query(Agent).filter(Agent.id == agent_id).first()
+            agent = db.query(Agent).filter(Agent.name == name).first()
             if not agent:
-                raise HTTPException(status_code=404, detail="Agent not found")
-            
+                raise HTTPException(status_code=404, detail=f"Agent with name {name} not found.")
             db.delete(agent)
             return True
 
-    def get_agent(self, agent_id: int) -> Optional[Agent]:
-        """获取单个agent信息"""
+    def get_agent(self, name: str) -> Optional[Agent]:
         with self.get_db() as db:
-            return db.query(Agent).filter(Agent.id == agent_id).first()
+            return db.query(Agent).filter(Agent.name == name).first()
 
-    def get_all_agents(self) -> List[Agent]:
-        """获取所有agent信息列表"""
+    def get_all_agents(self) -> Dict[str, Dict]:
         with self.get_db() as db:
-            return db.query(Agent).order_by(Agent.timestamp.desc()).all()
+            agents = db.query(Agent).all()
+            result = {}
+            for agent in agents:
+                result[agent.name] = {
+                    "id": agent.id,
+                    "create_time": agent.create_time,
+                    "name": agent.name,
+                    "freq": agent.freq,
+                    "describe": agent.describe
+                }
+            return result
 
-    def update_agent(self, agent_id: int, agent_data: AgentCreate) -> Optional[Agent]:
-        """更新agent信息"""
+    def update_agent(self, name: str, freq: Optional[int] = None, describe: Optional[str] = None) -> Agent:
         with self.get_db() as db:
-            agent = db.query(Agent).filter(Agent.id == agent_id).first()
+            agent = db.query(Agent).filter(Agent.name == name).first()
             if not agent:
-                raise HTTPException(status_code=404, detail="Agent not found")
-            
-            # 检查名称是否与其他agent冲突
-            if agent_data.name != agent.name:
-                existing_agent = db.query(Agent).filter(Agent.name == agent_data.name).first()
-                if existing_agent:
-                    raise HTTPException(status_code=400, detail="Agent with this name already exists")
-            
-            agent.name = agent_data.name
-            agent.url = agent_data.url
-            agent.describe = agent_data.describe
-            db.commit()
-            db.refresh(agent)
+                raise HTTPException(status_code=404, detail=f"Agent with name '{name}' not found.")
+            if freq is not None:
+                agent.freq = freq
+            if describe is not None:
+                agent.describe = describe
             return agent
 
