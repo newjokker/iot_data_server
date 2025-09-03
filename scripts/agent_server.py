@@ -73,7 +73,7 @@ def get_agent_status():
     agent_status = {}
     agents = agent_dao.get_all_agents()
     for each in agents:
-        each_name = each["name"]
+        each_name = agents[each]["name"]
         
         agent = agent_dao.get_agent(each_name)
         

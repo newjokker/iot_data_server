@@ -1,7 +1,7 @@
 import requests
 
 # url = "http://8.153.160.138:12345/agent/health_check/test"  
-url = "http://8.153.160.138:12345/agent/health_check"  
+url = "http://8.153.160.138:12345/agent/health_check/*"  
 
 
 try:
