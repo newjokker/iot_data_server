@@ -3,8 +3,8 @@
 
 from fastapi import APIRouter, HTTPException
 from datetime import datetime, timedelta
-from dao.agent import AgentDAO, AgentCreate, beijing_tz
-from dao.iot_data import SensorDataDAO
+from dao.agent_info import AgentDAO, AgentCreate, beijing_tz
+from dao.iot_data_info import SensorDataDAO
 
 # 创建路由器
 agent_router = APIRouter(prefix="/agent", tags=["Agent Management"])

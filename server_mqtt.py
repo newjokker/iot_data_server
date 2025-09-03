@@ -6,7 +6,7 @@ import json
 from datetime import datetime
 from typing import Optional
 import os
-from dao.iot_data import SensorDataDAO, SensorDataModel
+from dao.iot_data_info import SensorDataDAO, SensorDataModel
 import paho.mqtt.client as mqtt
 import ssl
 

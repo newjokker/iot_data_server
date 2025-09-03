@@ -6,7 +6,7 @@ from datetime import datetime
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse, FileResponse
 import os
-from dao.iot_data import SensorDataDAO, SensorDataModel
+from dao.iot_data_info import SensorDataDAO, SensorDataModel
 
 
 # 创建路由器
