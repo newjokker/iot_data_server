@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from datetime import datetime
 from typing import List, Optional
 from pydantic import BaseModel
-from dao.agent import AgentDAO, AgentCreate, AgentResponse, beijing_tz
+from dao.agent import AgentDAO, AgentCreate
 
 
 # 创建路由器
@@ -13,7 +13,7 @@ agent_router = APIRouter(prefix="/agent", tags=["Agent Management"])
 agent_dao = AgentDAO()
 
 # API路由 - 全部使用 /agent 前缀
-@agent_router.post("/", response_model=AgentResponse, summary="添加Agent")
+@agent_router.post("/create_agent")
 async def create_agent(agent_data: AgentCreate):
     """添加一个新的Agent"""
     try:
@@ -24,11 +24,11 @@ async def create_agent(agent_data: AgentCreate):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@agent_router.delete("/{agent_id}", summary="删除Agent")
-async def delete_agent(agent_id: int):
+@agent_router.delete("/delete_agent/{agent_name}")
+async def delete_agent(agent_name: str):
     """删除指定的Agent"""
     try:
-        success = agent_dao.delete_agent(agent_id)
+        success = agent_dao.delete_agent(agent_name)
         if success:
             return {"message": "Agent deleted successfully"}
     except HTTPException as he:
@@ -36,11 +36,11 @@ async def delete_agent(agent_id: int):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@agent_router.get("/{agent_id}", response_model=AgentResponse, summary="获取Agent信息")
-async def get_agent(agent_id: int):
+@agent_router.get("/get_agent/{agent_name}")
+async def get_agent(agent_name: str):
     """获取指定Agent的详细信息"""
     try:
-        agent = agent_dao.get_agent(agent_id)
+        agent = agent_dao.get_agent(agent_name)
         if not agent:
             raise HTTPException(status_code=404, detail="Agent not found")
         return agent
@@ -49,7 +49,7 @@ async def get_agent(agent_id: int):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@agent_router.get("/", summary="获取Agent列表")
+@agent_router.get("/get_all_agent")
 async def get_all_agents():
     """获取所有Agent的信息列表"""
     try:
@@ -58,7 +58,7 @@ async def get_all_agents():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@agent_router.put("/{agent_id}", response_model=AgentResponse, summary="更新Agent信息")
+@agent_router.put("/update_agent/{agent_id}")
 async def update_agent(agent_id: int, agent_data: AgentCreate):
     """更新指定Agent的信息"""
     try:
@@ -69,8 +69,13 @@ async def update_agent(agent_id: int, agent_data: AgentCreate):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@agent_router.get("/health/check", summary="健康检查")
-async def health_check():
+@agent_router.get("/health_check/{agent_name}")
+async def health_check(agent_name:str):
     """Agent服务的健康检查"""
+    
+    
+    
+    # 查看上次上传的时间和对应的上传频率是否对应，要是超过两个频率没有上传就是异常
+    
     return {"status": "healthy", "timestamp": datetime.now(beijing_tz), "service": "agent-management"}
 
