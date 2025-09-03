@@ -94,9 +94,19 @@ class AgentDAO:
             db.delete(agent)
             return True
 
-    def get_agent(self, name: str) -> Optional[Agent]:
+    def get_agent(self, name: str):
         with self.get_db() as db:
-            return db.query(Agent).filter(Agent.name == name).first()
+            agent = db.query(Agent).filter(Agent.name == name).first()
+            if agent:
+                return {
+                        "id": agent.id,
+                        "create_time": agent.create_time,
+                        "name": agent.name,
+                        "freq": agent.freq,
+                        "describe": agent.describe
+                    }
+            else:
+                return None
 
     def get_all_agents(self) -> Dict[str, Dict]:
         with self.get_db() as db:
