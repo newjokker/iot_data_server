@@ -2,9 +2,9 @@ import requests
 
 url = "http://8.153.160.138:12345/agent/create_agent"  # 替换为你的真实地址
 data = {
-    "name": "test",
-    "freq": 10,
-    "describe": "这是一个测试的程序"
+    "name": "ESP8266_DS18B20",
+    "freq": 60*5,
+    "describe": "用于记录鱼缸的温度"
 }
 
 try:

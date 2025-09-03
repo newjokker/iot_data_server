@@ -3,12 +3,14 @@ import requests
 
 url = "http://8.153.160.138:12345/data/iot_data"  
 
+# payload = {
+#     "device_id": "test",  
+#     "temperature": 23.5,
+# }
+
 payload = {
-    "device_id": "test",  
-    "temperature": 23.5,
-    "humidity": 65.0,
-    "timestamp": "2024-06-01T12:00:00",
-    "location": "room_101"
+    "device_id": "ESP8266_DS18B20",  
+    "temperature": 5 * 60,
 }
 
 
