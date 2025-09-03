@@ -71,8 +71,7 @@ async def update_agent(agent_id: int, agent_data: AgentCreate):
 async def health_check(agent_name:str):
     """Agent服务的健康检查"""
     
-    agent = AgentDAO()
-    agent.get_agent(agent_name)
+    agent = agent_dao.get_agent(agent_name)
     
     if agent is None:
         return {"status": "failed", "error_info": f"未找到对应的 agent:{agent_name}"}
