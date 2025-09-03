@@ -3,7 +3,7 @@
 # 删除启动的算法服务
 
 
-pid=$(ps -ef | grep "/usr/local/bin/uvicorn server:app" | grep -v grep | awk 'NR==1{print $2}')
+pid=$(ps -ef | grep "/root/venv/bin/python3 /root/venv/bin/uvicorn server:app" | grep -v grep | awk 'NR==1{print $2}')
 
 # 如果找到 PID，则终止该进程
 if [ -n "$pid" ]; then
