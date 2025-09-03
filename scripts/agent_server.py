@@ -1,18 +1,16 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 from fastapi import APIRouter, HTTPException
 from datetime import datetime
-from typing import List, Optional
-from pydantic import BaseModel
-from dao.agent import AgentDAO, AgentCreate
-
+from dao.agent import AgentDAO, AgentCreate, beijing_tz
+from dao.iot_data import SensorDataDAO
 
 # 创建路由器
 agent_router = APIRouter(prefix="/agent", tags=["Agent Management"])
 
-
-# 初始化DAO
 agent_dao = AgentDAO()
 
-# API路由 - 全部使用 /agent 前缀
 @agent_router.post("/create_agent")
 async def create_agent(agent_data: AgentCreate):
     """添加一个新的Agent"""
@@ -73,9 +71,16 @@ async def update_agent(agent_id: int, agent_data: AgentCreate):
 async def health_check(agent_name:str):
     """Agent服务的健康检查"""
     
+    agent = AgentDAO.get_agent(agent_name)
     
+    if agent is None:
+        return {"status": "failed", "error_info": f"未找到对应的 agent:{agent_name}"}
+    else:
+        start_time = datetime.now(beijing_tz)
+        start_time = start_time - datetime.timedelta(seconds=agent.freq)
+        info = SensorDataDAO.query_sensor_data(device_id=agent_name, start_time=start_time, limit=1)
+        if len(info) > 0:
+            return {"status": "success", "info": "health"}
     
-    # 查看上次上传的时间和对应的上传频率是否对应，要是超过两个频率没有上传就是异常
-    
-    return {"status": "healthy", "timestamp": datetime.now(beijing_tz), "service": "agent-management"}
+    return {"status": "success", "info": "unhealth"}
 
