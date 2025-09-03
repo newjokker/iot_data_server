@@ -77,7 +77,7 @@ async def health_check(agent_name:str):
         return {"status": "failed", "error_info": f"未找到对应的 agent:{agent_name}"}
     else:
         start_time = datetime.now(beijing_tz)
-        start_time = start_time - timedelta(seconds=agent.freq)
+        start_time = start_time - timedelta(seconds=agent["freq"])
         info = SensorDataDAO.query_sensor_data(device_id=agent_name, start_time=start_time, limit=1)
         if len(info) > 0:
             return {"status": "success", "info": "health"}
