@@ -1,10 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 from fastapi import APIRouter, HTTPException
 from datetime import datetime
-from typing import List, Optional
-from pydantic import BaseModel
-from scripts.agent_server import AgentDAO, AgentCreate, AgentResponse, beijing_tz
 from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import JSONResponse, HTMLResponse, FileResponse
+from fastapi.responses import JSONResponse, FileResponse
 import os
 from dao.iot_data import SensorDataDAO, SensorDataModel
 
