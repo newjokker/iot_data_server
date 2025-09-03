@@ -67,21 +67,50 @@ async def update_agent(agent_id: int, agent_data: AgentCreate):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+def get_agent_status():
+    """获取所有的 agent 的健康状态"""
+    agent_status = {}
+    agents = agent_dao.get_all_agents()
+    for each in agents:
+        each_name = each["name"]
+        
+        agent = agent_dao.get_agent(each_name)
+        
+        if agent is None:
+            agent_status[each_name] = {"status": "healthy"}
+        else:
+            start_time = datetime.now(beijing_tz)
+            start_time = start_time - timedelta(seconds=agent["freq"])
+            sensor_data = SensorDataDAO()
+            info = sensor_data.query_sensor_data(device_id=each_name, start_time=start_time, limit=1)
+            if len(info) > 0:
+                agent_status[each_name] = {"status": "healthy"}
+            else:
+                agent_status[each_name] = {"status": "unhealthy"}
+    return agent_status       
+    
+
 @agent_router.get("/health_check/{agent_name}")
 async def health_check(agent_name:str):
     """Agent服务的健康检查"""
     
-    agent = agent_dao.get_agent(agent_name)
-    
-    if agent is None:
-        return {"status": "failed", "error_info": f"未找到对应的 agent:{agent_name}"}
+    if agent_name =="":
+        agent_status_info = get_agent_status()
+        return {"status": "success", "info": agent_status_info}
+        
     else:
-        start_time = datetime.now(beijing_tz)
-        start_time = start_time - timedelta(seconds=agent["freq"])
-        sensor_data = SensorDataDAO()
-        info = sensor_data.query_sensor_data(device_id=agent_name, start_time=start_time, limit=1)
-        if len(info) > 0:
-            return {"status": "success", "info": "health"}
-    
-    return {"status": "success", "info": "unhealth"}
+        agent = agent_dao.get_agent(agent_name)
+        
+        if agent is None:
+            return {"status": "failed", "error_info": f"未找到对应的 agent:{agent_name}"}
+        else:
+            start_time = datetime.now(beijing_tz)
+            start_time = start_time - timedelta(seconds=agent["freq"])
+            sensor_data = SensorDataDAO()
+            info = sensor_data.query_sensor_data(device_id=agent_name, start_time=start_time, limit=1)
+            if len(info) > 0:
+                return {"status": "success", "info": [{agent_name: {"status": "healthy"}}]}
+        
+    return {"status": "success", "info": [{agent_name: {"status": "unhealthy"}}]}
 
