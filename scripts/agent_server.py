@@ -95,7 +95,7 @@ def get_agent_status():
 async def health_check(agent_name:str):
     """Agent服务的健康检查"""
     
-    if agent_name =="":
+    if agent_name =="*":
         agent_status_info = get_agent_status()
         return {"status": "success", "info": agent_status_info}
         
