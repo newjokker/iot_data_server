@@ -15,7 +15,7 @@ agent_dao = AgentDAO()
 async def create_agent(agent_data: AgentCreate):
     """添加一个新的Agent"""
     try:
-        agent = agent_dao.create_agent(agent_data)
+        agent = agent_dao.create_agent(name=agent_data.name, freq=agent_data.freq, describe=agent_data.describe)
         return agent
     except HTTPException as he:
         raise he
